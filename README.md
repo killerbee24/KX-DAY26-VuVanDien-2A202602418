@@ -239,3 +239,21 @@ Chi tiết + code cho cả 3 phần: xem [`03-production/README.md`](03-producti
 ---
 
 **Tóm lại:** Function Calling là *cơ chế model gọi công cụ*; MCP là *chuẩn để kết nối model với các công cụ đó* — và MCP thực chất dùng Function Calling làm nền tảng để hoạt động.
+
+## Bằng chứng hoàn thành
+
+Các ảnh dưới đây được tạo từ output chạy thật. API key được nạp từ file `.env` cục bộ và không xuất hiện trong ảnh hoặc Git.
+
+| Checkpoint | Ảnh bằng chứng |
+|---|---|
+| Function Calling với Gemini | [`01-function-calling.png`](screenshots/01-function-calling.png) |
+| MCP client/server qua stdio | [`02-mcp-client.png`](screenshots/02-mcp-client.png) |
+| Authentication thành công | [`03a-auth-ok.png`](screenshots/03a-auth-ok.png) |
+| Authentication thất bại | [`03a-auth-fail.png`](screenshots/03a-auth-fail.png) |
+| Tool Registry & Discovery | [`03b-registry.png`](screenshots/03b-registry.png) |
+| Versioning & Backward Compatibility | [`03c-versioning.png`](screenshots/03c-versioning.png) |
+| Kiểm tra cấu hình, MCP handshake và health check | [`04-verify-setup.png`](screenshots/04-verify-setup.png) |
+| ADK lấy thời tiết hiện tại từ WeatherAPI | [`04-adk-current.png`](screenshots/04-adk-current.png) |
+| ADK lấy dự báo 3 ngày từ WeatherAPI | [`04-adk-forecast.png`](screenshots/04-adk-forecast.png) |
+
+Hướng dẫn theo từng checkpoint và lệnh chạy lại: [`HUONG_DAN_LAB.md`](HUONG_DAN_LAB.md).

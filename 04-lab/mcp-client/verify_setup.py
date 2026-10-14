@@ -3,6 +3,7 @@
 Verification script for Weather Agent setup
 Checks if all components are configured correctly
 """
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -22,12 +23,16 @@ def check_environment():
     load_dotenv()
     
     api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key or api_key == "your_google_api_key_here":
+    if (
+        not api_key
+        or api_key == "your_google_api_key_here"
+        or api_key.startswith("replace_with_")
+    ):
         print("❌ GOOGLE_API_KEY not configured in .env")
         print("   Get key from: https://aistudio.google.com/apikey")
         return False
     
-    print(f"✅ GOOGLE_API_KEY configured ({api_key[:10]}...)")
+    print("✅ GOOGLE_API_KEY configured (value hidden)")
     return True
 
 def check_dependencies():
@@ -36,7 +41,7 @@ def check_dependencies():
     
     required_packages = [
         ("google.adk", "Google ADK"),
-        ("google.generativeai", "Google Generative AI"),
+        ("google.genai", "Google GenAI"),
         ("mcp", "MCP"),
         ("fastmcp", "FastMCP"),
         ("dotenv", "python-dotenv"),
@@ -54,7 +59,7 @@ def check_dependencies():
     
     if not all_installed:
         print("\n   Install with: uv sync")
-        print("   Or: pip install google-adk google-generativeai mcp fastmcp python-dotenv httpx")
+        print("   Or: pip install google-adk google-genai mcp fastmcp python-dotenv httpx")
     
     return all_installed
 
@@ -79,7 +84,7 @@ def check_agent_structure():
     return all_exist
 
 def check_mcp_server():
-    """Check if MCP server is accessible"""
+    """Perform an MCP handshake, discover tools, and call health_check."""
     print("\n🔍 Checking MCP server connectivity...")
 
     # Cùng URL mà weather_agent/agent.py dùng (biến môi trường MCP_SERVER_URL)
@@ -87,21 +92,34 @@ def check_mcp_server():
     load_dotenv()
     server_url = os.getenv("MCP_SERVER_URL", "http://localhost:8085/mcp")
 
+    async def probe_server():
+        from mcp import ClientSession
+        from mcp.client.streamable_http import streamable_http_client
+
+        async with streamable_http_client(server_url) as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                tools = await session.list_tools()
+                tool_names = {tool.name for tool in tools.tools}
+                expected = {"get_current_weather", "get_forecast", "health_check"}
+                missing = expected - tool_names
+                if missing:
+                    raise RuntimeError(f"Missing MCP tools: {sorted(missing)}")
+
+                health = await session.call_tool("health_check", {})
+                if health.isError:
+                    raise RuntimeError("health_check returned an MCP tool error")
+                return sorted(tool_names)
+
     try:
-        import httpx
-
-        response = httpx.get(server_url, timeout=10.0)
-        # GET thuần lên endpoint MCP thường bị từ chối (400/405/406) vì thiếu
-        # header/session MCP — nhưng có phản hồi nghĩa là server đang chạy.
-        if response.status_code < 500:
-            print(f"✅ MCP server reachable at {server_url} (HTTP {response.status_code})")
-            return True
-        print(f"⚠️  MCP server returned status {response.status_code}")
-        return False
-
+        tool_names = asyncio.run(probe_server())
+        print(f"✅ MCP handshake succeeded at {server_url}")
+        print(f"   Tools: {', '.join(tool_names)}")
+        print("✅ health_check completed successfully")
+        return True
     except Exception as e:
-        print(f"❌ Cannot reach MCP server at {server_url}: {e}")
-        print("   Start it: cd ../mcp-server && uv run python weather.py")
+        print(f"❌ MCP verification failed at {server_url}: {e}")
+        print("   Start it: cd ../mcp-server && uv run --env-file .env python weather.py")
         return False
 
 def check_agent_import():

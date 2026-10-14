@@ -38,20 +38,21 @@ AI agent built with **Google Agent Development Kit (ADK)** that uses tools from 
 
 ### 1. Start the MCP Server
 
-```bash
+```powershell
 cd ../mcp-server
-export WEATHERAPI_KEY="your_weatherapi_key"
-uv run python weather.py
+# Copy .env.example to .env, then set WEATHERAPI_KEY
+Copy-Item .env.example .env
+uv run --env-file .env python weather.py
 ```
 
 ### 2. Setup Environment
 
-```bash
+```powershell
 cd mcp-client
 
-# Create .env file with your Google API key
-# Get free key from: https://aistudio.google.com/apikey
-echo "GOOGLE_API_KEY=your_google_api_key_here" > .env
+# Create .env from the safe template, then set GOOGLE_API_KEY
+# Get a key from: https://aistudio.google.com/apikey
+Copy-Item .env.example .env
 ```
 
 ### 3. Install Dependencies
@@ -103,7 +104,7 @@ connection_params = StreamableHTTPConnectionParams(
 
 root_agent = Agent(
     name="weather_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
     tools=[weather_tools],
 )
 ```
@@ -133,6 +134,9 @@ Fix the connection and restart ADK web.
 Create `.env` file:
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3.5-flash-lite
+MCP_SERVER_URL=http://localhost:8085/mcp
+PYTHONUTF8=1
 ```
 
 ## Resources
