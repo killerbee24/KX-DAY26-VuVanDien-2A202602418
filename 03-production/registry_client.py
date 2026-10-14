@@ -44,7 +44,9 @@ class ToolRegistry:
     """Danh mục trung tâm — agent tra cứu tool theo tag, tên, hoặc mô tả."""
 
     def __init__(self, path: Path = REGISTRY_PATH) -> None:
-        with open(path) as f:
+        # registry.json is UTF-8 and contains Vietnamese text. Explicit encoding
+        # avoids Windows falling back to cp1252 and raising UnicodeDecodeError.
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         self.tools: dict[str, dict] = data["tools"]
         self.servers: dict[str, dict] = data["servers"]
